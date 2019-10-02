@@ -19,40 +19,24 @@ type Node struct {
 
 // Build creates a tree structure from a flat array of records
 func Build(records []Record) (*Node, error) {
-	if len(records) == 0 {
-		return nil, nil
-	}
-
 	sort.Slice(records, func(i, j int) bool {
 		return records[i].ID < records[j].ID
 	})
 	nodes := make(map[int]*Node)
-	root, records := records[0], records[1:]
-
-	if root.ID != 0 {
-		return &Node{}, errors.New("No root node present")
-	}
-	if root.Parent != 0 {
-		return &Node{}, errors.New("Root node cannot have parent")
-	}
-	nodes[0] = &Node{ID: 0}
-
 	for i, record := range records {
-		if i != record.ID-1 {
+		if i != record.ID {
 			return &Node{}, errors.New("Non-continuous record")
 		}
-		if record.Parent >= record.ID {
+		if i == 0 && record.Parent != 0 {
+			return &Node{}, errors.New("Root node cannot have parent")
+		}
+		if record.Parent >= i && i != 0 {
 			return &Node{}, errors.New("Cycle detected")
 		}
-
-		nodes[record.ID] = &Node{ID: record.ID}
-
-		if parent, ok := nodes[record.Parent]; ok {
-			parent.Children = append(parent.Children, nodes[record.ID])
-		} else {
-			return &Node{}, errors.New("Cannot find parent")
+		nodes[i] = &Node{ID: i}
+		if i != 0 {
+			nodes[record.Parent].Children = append(nodes[record.Parent].Children, nodes[i])
 		}
 	}
-
 	return nodes[0], nil
 }
