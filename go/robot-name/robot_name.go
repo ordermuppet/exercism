@@ -2,32 +2,92 @@ package robotname
 
 import (
 	"errors"
-	"fmt"
 	"math/rand"
 )
 
-var usedNames map[string]struct{}
+var rootNode CharacterNode
 
 // Robot is a robot with a unique name.
 type Robot struct {
 	name string
 }
 
-// Name returns a unique name for all Robots created.
-func (r *Robot) Name() (string, error) {
-	if len(usedNames) == 10*10*10*26*26 { // 10 possible digits, 26 possible letters
-		return "", errors.New("Possible names exhausted")
+// CharacterNode is a thing
+type CharacterNode struct {
+	Char      rune
+	Children  map[rune]*CharacterNode
+	Exhausted bool
+	Depth     int
+}
+
+func (c *CharacterNode) sequence() []byte {
+	if c.Depth == 5 {
+		c.Exhausted = true
+		return []byte{byte(c.Char)}
 	}
-	if r.name == "" {
-		for {
-			r.name = randomName()
-			if _, ok := usedNames[r.name]; !ok {
-				usedNames[r.name] = struct{}{}
-				break
+
+	possibleRunes := make([]rune, 0)
+	if c.Depth == 0 || c.Depth == 1 {
+		for char := 'A'; char <= 'Z'; char++ {
+			if node, ok := c.Children[char]; ok {
+				if !node.Exhausted {
+					possibleRunes = append(possibleRunes, char)
+				}
+			} else {
+				possibleRunes = append(possibleRunes, char)
+			}
+		}
+	} else {
+		for char := '0'; char <= '9'; char++ {
+			if node, ok := c.Children[char]; ok {
+				if !node.Exhausted {
+					possibleRunes = append(possibleRunes, char)
+				}
+			} else {
+				possibleRunes = append(possibleRunes, char)
 			}
 		}
 	}
-	fmt.Println(r.name)
+
+	// If there's only one possible rune left, this node is now exhausted
+	var r rune
+	// fmt.Println(possibleRunes)
+	if len(possibleRunes) == 1 {
+		// c.Exhausted = true
+		r = possibleRunes[0]
+	} else {
+		// fmt.Println(len(possibleRunes))
+		r = possibleRunes[rand.Intn(len(possibleRunes))]
+	}
+	var selectedNode *CharacterNode
+	if node, ok := c.Children[r]; ok {
+		selectedNode = node
+	} else {
+		selectedNode = &CharacterNode{Depth: c.Depth + 1, Char: r, Children: make(map[rune]*CharacterNode)}
+	}
+
+	c.Children[r] = selectedNode
+	remainder := selectedNode.sequence()
+	if len(possibleRunes) == 1 && selectedNode.Exhausted {
+		c.Exhausted = true
+	}
+
+	if c.Depth == 0 {
+		return remainder
+	} else {
+		return append([]byte{byte(c.Char)}, remainder...)
+	}
+}
+
+// Name returns a unique name for all Robots created.
+func (r *Robot) Name() (string, error) {
+	if r.name == "" {
+		if rootNode.Exhausted {
+			// fmt.Println(rootNode)
+			return "", errors.New("Possible names exhausted")
+		}
+		r.name = string(rootNode.sequence())
+	}
 	return r.name, nil
 }
 
@@ -36,24 +96,6 @@ func (r *Robot) Reset() {
 	r.name = ""
 }
 
-func randomName() string {
-	return string([]byte{
-		randomLetter(),
-		randomLetter(),
-		randomNumber(),
-		randomNumber(),
-		randomNumber(),
-	})
-}
-
-func randomLetter() byte {
-	return byte(65 + rand.Intn(25)) // 65 = A, 90 = Z
-}
-
-func randomNumber() byte {
-	return byte(48 + rand.Intn(9)) // 48 = string '0', 57 = string '9'
-}
-
 func init() {
-	usedNames = make(map[string]struct{})
+	rootNode = CharacterNode{Depth: 0, Children: make(map[rune]*CharacterNode)}
 }
