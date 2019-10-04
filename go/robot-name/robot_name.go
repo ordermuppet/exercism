@@ -26,39 +26,8 @@ func (c *CharacterNode) sequence() []byte {
 		return []byte{byte(c.Char)}
 	}
 
-	possibleRunes := make([]rune, 0)
-	if c.Depth == 0 || c.Depth == 1 {
-		for char := 'A'; char <= 'Z'; char++ {
-			if node, ok := c.Children[char]; ok {
-				if !node.Exhausted {
-					possibleRunes = append(possibleRunes, char)
-				}
-			} else {
-				possibleRunes = append(possibleRunes, char)
-			}
-		}
-	} else {
-		for char := '0'; char <= '9'; char++ {
-			if node, ok := c.Children[char]; ok {
-				if !node.Exhausted {
-					possibleRunes = append(possibleRunes, char)
-				}
-			} else {
-				possibleRunes = append(possibleRunes, char)
-			}
-		}
-	}
-
-	// If there's only one possible rune left, this node is now exhausted
-	var r rune
-	// fmt.Println(possibleRunes)
-	if len(possibleRunes) == 1 {
-		// c.Exhausted = true
-		r = possibleRunes[0]
-	} else {
-		// fmt.Println(len(possibleRunes))
-		r = possibleRunes[rand.Intn(len(possibleRunes))]
-	}
+	possibleRunes := c.possibleRunes()
+	r := possibleRunes[rand.Intn(len(possibleRunes))]
 	var selectedNode *CharacterNode
 	if node, ok := c.Children[r]; ok {
 		selectedNode = node
@@ -74,21 +43,38 @@ func (c *CharacterNode) sequence() []byte {
 
 	if c.Depth == 0 {
 		return remainder
-	} else {
-		return append([]byte{byte(c.Char)}, remainder...)
 	}
+	return append([]byte{byte(c.Char)}, remainder...)
 }
 
 // Name returns a unique name for all Robots created.
 func (r *Robot) Name() (string, error) {
 	if r.name == "" {
 		if rootNode.Exhausted {
-			// fmt.Println(rootNode)
 			return "", errors.New("Possible names exhausted")
 		}
 		r.name = string(rootNode.sequence())
 	}
 	return r.name, nil
+}
+
+func (c CharacterNode) possibleRunes() []rune {
+	runes := make([]rune, 0)
+
+	var min, max rune
+	if c.Depth == 0 || c.Depth == 1 {
+		min, max = 'A', 'Z'
+	} else {
+		min, max = '0', '9'
+	}
+
+	for r := min; r <= max; r++ {
+		if node, ok := c.Children[r]; !ok || !node.Exhausted {
+			runes = append(runes, r)
+		}
+	}
+
+	return runes
 }
 
 // Reset resets this robot's name.
