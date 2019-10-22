@@ -13,6 +13,6 @@ module ResistorColorDuo
   }
 
   def self.value(colors)
-    ("%d%d" % colors.take(2).map { |color| COLORS[color] }).to_i
+    colors.take(2).map { |color| COLORS[color] }.join.to_i
   end
 end

@@ -2,9 +2,12 @@ package robotname
 
 import (
 	"errors"
+	"fmt"
+	"math/rand"
+	"time"
 )
 
-var rootNode RuneNode
+var usedNames = map[string]bool{}
 
 // Robot is a robot with a unique name.
 type Robot struct {
@@ -13,12 +16,19 @@ type Robot struct {
 
 // Name returns a unique name for all Robots created.
 func (r *Robot) Name() (string, error) {
-	if r.name == "" {
-		if rootNode.Exhausted {
-			return "", errors.New("Possible names exhausted")
-		}
-		r.name = string(rootNode.RandomSequence())
+	if r.name != "" {
+		return r.name, nil
 	}
+
+	if len(usedNames) == 10*10*10*26*26 {
+		return "", errors.New("Possible names exhausted")
+	}
+
+	r.name = randomName()
+	for usedNames[r.name] {
+		r.name = randomName()
+	}
+	usedNames[r.name] = true
 	return r.name, nil
 }
 
@@ -27,6 +37,15 @@ func (r *Robot) Reset() {
 	r.name = ""
 }
 
+func randomName() string {
+	return fmt.Sprintf(
+		"%c%c%03d",
+		rand.Intn(26)+'A',
+		rand.Intn(26)+'A',
+		rand.Intn(1000),
+	)
+}
+
 func init() {
-	rootNode = RuneNode{Depth: 0, Children: make(map[rune]*RuneNode)}
+	rand.Seed(time.Now().UnixNano())
 }

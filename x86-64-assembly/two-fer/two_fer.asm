@@ -7,27 +7,26 @@ default_name db "you", 0
 
 section .text
 global two_fer
-print:
+string_copy:
     mov cl, [rax]
     mov byte [rsi], cl
     inc rax
     inc rsi
-    mov cl, [rax]
-    cmp cl, 0
-    jnz print
+    cmp byte [rax], 0
+    jnz string_copy
     ret
 
 two_fer:
     lea rax, [prefix]
-    call print ; print "One for "
+    call string_copy ; print "One for "
 
     cmp rdi, 0
-    jnz print_name
+    jnz copy_name
     lea rdi, [default_name]
-print_name:
-    lea rax, [rdi]
-    call print ; print "you" if a NULL pointer has been passed, otherwise print the passed name
+copy_name:
+    mov rax, rdi
+    call string_copy ; print "you" if a NULL pointer has been passed, otherwise print the passed name
     lea rax, [suffix]
-    call print ; print ", one for me."
+    call string_copy ; print ", one for me."
     mov byte [rsi], 0
     ret
