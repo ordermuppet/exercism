@@ -18,17 +18,15 @@ section .text
 
 global string_compare
 string_compare:
-    mov r10, rdi
+    mov r8, rdi
 char_compare:
-    mov r8b, [r10]
-    mov r9b, [rsi]
-    cmp r8b, r9b
+    mov r9b, [r8]
+    mov r10b, [rsi]
+    cmp r9b, r10b
     jnz string_not_equal
-
-    test r8b, r8b
+    test r9b, r9b
     jz string_equal
-
-    inc r10
+    inc r8
     inc rsi
     jmp char_compare
 string_equal:
@@ -47,7 +45,6 @@ check_color:
     call string_compare
     cmp rax, 1
     jz color_match
-
     add r11, 8
     inc rcx
     jmp check_color
